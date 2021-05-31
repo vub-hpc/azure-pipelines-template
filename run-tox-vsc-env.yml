@@ -10,29 +10,9 @@ jobs:
   - ${{ each job in parameters.jobs }}:
       - job: ${{ coalesce(job.value.name, job.key) }}
         dependsOn: ${{ coalesce(job.value.dependsOn, parameters.dependsOn) }}
-        strategy:
-          matrix:
-            ${{ if job.value.image }}:
-              ${{ each image in job.value.image }}:
-                ${{ image }}:
-                  ${{ if eq(image, 'linux') }}:
-                    image: "ubuntu-latest"
-                    image_name: "linux"
-                  ${{ if eq(image, 'windows') }}:
-                    image: "windows-latest"
-                    image_name: "windows"
-                  ${{ if eq(image, 'macOs') }}:
-                    image: "macOS-latest"
-                    image_name: "macOs"
-                  ${{ if notIn(image, 'macOs', 'linux', 'windows') }}:
-                    image: ${{ coalesce(image, 'ubuntu-latest') }}
-                    image_name: ${{ coalesce(image, 'linux') }}
-            ${{ if not(job.value.image) }}:
-              linux:
-                image: "ubuntu-latest"
-                image_name: "linux"
+
         pool:
-          vmImage: $[ variables['image'] ]
+          vmImage: "ubuntu-latest"
 
         variables:
           TMPDIR: $(Agent.TempDirectory)
@@ -100,11 +80,6 @@ jobs:
                     ${{ if or(eq(job.key, 'pypy3'), startsWith(job.key, 'pypy3-')) }}:
                       versionSpec: "pypy3"
                   architecture: ${{ coalesce(job.value.architecture, 'x64') }}
-          - ${{ if eq(job.value.py, 'brew@python3') }}:
-              - script: "brew install python@3"
-                displayName: "provision target test python via homebrew python@3"
-              - script: echo "##vso[task.setvariable variable=PATH]/usr/local/opt/python@3:$(PATH)"
-                displayName: add python@3 to PATH
           - ${{ if or(eq(job.key, 'py310'), startsWith(job.key, 'py310-')) }}:
               - script: |
                   sudo add-apt-repository ppa:deadsnakes
