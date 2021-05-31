@@ -35,7 +35,7 @@ jobs:
               addToPath: false
             name: toxPython
 
-          - script: $(toxPython.pythonLocation)/python -m pip install -U --user pip
+          - script: $(toxPython.pythonLocation)/python -m pip install -U --user pip wheel
             displayName: "tox: upgrade pip"
 
           - ${{ if parameters.tox_version }}:
@@ -111,6 +111,7 @@ jobs:
               'python -c "import sys; import os; print(\"\n\".join(os.environ[\"PATH\"].split(os.pathsep)));
               print(sys.version); print(sys.executable);"'
             displayName: show python information
+
           - script: $(toxPython.pythonLocation)/python -m tox -av
             displayName: "tox: provision and show envs"
 
