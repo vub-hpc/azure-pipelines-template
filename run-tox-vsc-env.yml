@@ -55,7 +55,7 @@ jobs:
                     '$(toxPython.pythonLocation)/python -m pip install -U --user --force-reinstall {0}',
                     parameters.tox_version
                   ) }}
-                displayName: "${{ format('tox: install {0} from PyPi', parameters.tox_version) }}"
+                displayName: "${{ format('tox: install {0} from PyPI', parameters.tox_version) }}"
           - ${{ if not(parameters.tox_version) }}:
               - script: $(toxPython.pythonLocation)/python -m pip install -U --user --force-reinstall . -v
                 displayName: "tox: install inline"
@@ -127,15 +127,6 @@ jobs:
               print(sys.version); print(sys.executable);"
             displayName: "show python information"
 
-          - ${{ if parameters.vsc_requires }}:
-              - script: python -m pip install --user wheel vsc-install
-                displayName: "vsc: install vsc-install"
-              - ${{ each vscpkg in parameters.vsc_requires }}:
-                  - checkout: ${{ vscpkg }}
-                    displayName: "${{ format('vsc: clone {0}', vscpkg) }}"
-                  - script: python -m pip install --user $(Build.SourcesDirectory)/${{ vscpkg }}
-                    displayName: "${{ format('vsc: install {0}', vscpkg) }}"
-
           - script: $(toxPython.pythonLocation)/python -m tox -av
             displayName: "tox: provision and show envs"
             workingDirectory: $(TOXDIR)
@@ -144,6 +135,26 @@ jobs:
           - script: $(toxPython.pythonLocation)/python -m tox --notest -vv --skip-missing-interpreters false
             displayName: "tox: generate test environment"
             workingDirectory: $(TOXDIR)
+
+          # install VSC required packages inside tox environment
+          - ${{ if parameters.vsc_requires }}:
+              - script: |
+                  python_toxenv="$(TOXDIR)/.tox/${{ job.key }}/bin/python"
+                  $python_toxenv -m pip install wheel vsc-install
+                displayName: "vsc: install vsc-install"
+                env:
+                  PYTHON_HOME: ""
+                  VIRTUAL_ENV: ${{ job.key }}
+              - ${{ each vscpkg in parameters.vsc_requires }}:
+                  - checkout: ${{ vscpkg }}
+                    displayName: "${{ format('vsc: clone {0}', vscpkg) }}"
+                  - script: |
+                      python_toxenv="$(TOXDIR)/.tox/${{ job.key }}/bin/python"
+                       $python_toxenv -m pip install $(Build.SourcesDirectory)/${{ vscpkg }}
+                    displayName: "${{ format('vsc: install {0}', vscpkg) }}"
+                    env:
+                      PYTHON_HOME: ""
+                      VIRTUAL_ENV: ${{ job.key }}
 
           - script: $(toxPython.pythonLocation)/python -m tox
             displayName: "tox: run test environment"
