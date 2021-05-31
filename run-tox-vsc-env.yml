@@ -8,6 +8,7 @@ parameters:
     with_toxenv: ""
     for_envs: []
   dependsOn: []
+  vsc_requires: []
 
 jobs:
   - ${{ each job in parameters.jobs }}:
@@ -118,6 +119,13 @@ jobs:
               python -c "import sys; import os; print('\n'.join(os.environ['PATH'].split(os.pathsep)));
               print(sys.version); print(sys.executable);"
             displayName: "show python information"
+
+          - ${{ if parameters.vsc_requires }}:
+              - ${{ each vscpkg in parameters.vsc_requires }}:
+                  - checkout: ${{ vscpkg }}
+                    displayName: "${{ format('vsc: clone {0}', vscpkg) }}"
+                  - script: python -m pip install --user $(Build.SourcesDirectory)/${{ vscpkg }}
+                    displayName: "${{ format('vsc: install {0}', vscpkg) }}"
 
           - script: $(toxPython.pythonLocation)/python -m tox -av
             displayName: "tox: provision and show envs"
