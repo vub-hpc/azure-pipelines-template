@@ -121,11 +121,14 @@ jobs:
             displayName: "show python information"
 
           - ${{ if parameters.vsc_requires }}:
+              - script: python -m pip install --user wheel vsc-install
+                displayName: "vsc: install vsc-install"
               - ${{ each vscpkg in parameters.vsc_requires }}:
                   - checkout: ${{ vscpkg }}
                     displayName: "${{ format('vsc: clone {0}', vscpkg) }}"
                   - script: python -m pip install --user $(Build.SourcesDirectory)/${{ vscpkg }}
                     displayName: "${{ format('vsc: install {0}', vscpkg) }}"
+                  - script: cd $(Build.SourcesDirectory)/$(Build.Repository.Name)
 
           - script: $(toxPython.pythonLocation)/python -m tox -av
             displayName: "tox: provision and show envs"
