@@ -1,5 +1,8 @@
 parameters:
-  jobs: []
+  jobs:
+    py39:
+    py36:
+    py27:
   tox_version: "tox"
   coverage:
     with_toxenv: ""
