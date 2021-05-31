@@ -22,8 +22,15 @@ jobs:
           TMPDIR: $(Agent.TempDirectory)
           PIP_NO_WARN_SCRIPT_LOCATION: "0"
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
-          TOXENV: ${{ coalesce(job.value.toxenv, job.key) }}
           PYTHONWARNINGS: "ignore:::pip._internal.cli.base_command"
+          TOXENV: ${{ coalesce(job.value.toxenv, job.key) }}
+
+          # having extra VSC packages moves the source directory into its own sub-folder
+          # if length 'vsc_requires' > 0, overwrite global TOXDIR variable
+          ${{ if contains(join('*', parameters.vsc_requires), '*') }}:
+            TOXDIR: $(Build.SourcesDirectory)/$(Build.Repository.Name)
+          ${{ if not(contains(join('*', parameters.vsc_requires), '*')) }}:
+            TOXDIR: $(Build.SourcesDirectory)
 
         steps:
           # checkout with submodules please
@@ -128,44 +135,49 @@ jobs:
                     displayName: "${{ format('vsc: clone {0}', vscpkg) }}"
                   - script: python -m pip install --user $(Build.SourcesDirectory)/${{ vscpkg }}
                     displayName: "${{ format('vsc: install {0}', vscpkg) }}"
-                  - script: cd $(Build.SourcesDirectory)/$(Build.Repository.Name)
 
           - script: $(toxPython.pythonLocation)/python -m tox -av
             displayName: "tox: provision and show envs"
+            workingDirectory: $(TOXDIR)
 
           # run tests
           - script: $(toxPython.pythonLocation)/python -m tox --notest -vv --skip-missing-interpreters false
             displayName: "tox: generate test environment"
+            workingDirectory: $(TOXDIR)
 
           - script: $(toxPython.pythonLocation)/python -m tox
             displayName: "tox: run test environment"
+            workingDirectory: $(TOXDIR)
 
           # upload junit result if present
           - bash:
               'printf "##vso[task.setVariable variable=junit]" && ([ -f junit.$(TOXENV).xml ] && printf yes || printf
               no) && echo ""'
-            condition: always()
             displayName: "check if junit file present"
-            workingDirectory: "$(System.DefaultWorkingDirectory)/.tox"
+            condition: always()
+            workingDirectory: $(TOXDIR)/.tox
 
           - task: PublishTestResults@2
             displayName: "publish test results via junit"
             condition: eq(variables.junit, 'yes')
             inputs:
               testResultsFormat: "JUnit"
-              testResultsFiles: ".tox/junit.$(TOXENV).xml"
+              testResultsFiles: "$(TOXDIR)/.tox/junit.$(TOXENV).xml"
               testRunTitle: "junit-$(Agent.OS)-$(Agent.OSArchitecture)-$(TOXENV)"
 
           # upload coverage artifacts if present
           - ${{ if and(parameters.coverage.with_toxenv, containsValue(parameters.coverage.for_envs, job.key)) }}:
               - script:
-                  ${{ format('$(toxPython.pythonLocation)/python -m tox -e {0} --skip-missing-interpreters false',
-                  parameters.coverage.with_toxenv) }}
+                  ${{ format(
+                    '$(toxPython.pythonLocation)/python -m tox -e {0} --skip-missing-interpreters false',
+                    parameters.coverage.with_toxenv
+                  ) }}
                 displayName: "create coverage report"
+                workingDirectory: $(TOXDIR)
               - task: CopyFiles@2
                 displayName: "move coverage files into staging area"
                 inputs:
-                  sourceFolder: $(System.DefaultWorkingDirectory)/.tox
+                  sourceFolder: $(TOXDIR)/.tox
                   contents: |
                     .coverage
                     coverage.xml
