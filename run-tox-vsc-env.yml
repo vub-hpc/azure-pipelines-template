@@ -27,9 +27,9 @@ jobs:
 
           # having extra VSC packages moves the source directory into its own sub-folder
           # if length 'vsc_requires' > 0, overwrite global TOXDIR variable
-          ${{ if contains(join('*', parameters.vsc_requires), '*') }}:
+          ${{ if gt(length(parameters.vsc_requires), 0) }}:
             TOXDIR: $(Build.SourcesDirectory)/$(Build.Repository.Name)
-          ${{ if not(contains(join('*', parameters.vsc_requires), '*')) }}:
+          ${{ if eq(length(parameters.vsc_requires), 0) }}:
             TOXDIR: $(Build.SourcesDirectory)
 
         steps:
@@ -137,7 +137,7 @@ jobs:
             workingDirectory: $(TOXDIR)
 
           # install VSC required packages inside tox environment
-          - ${{ if parameters.vsc_requires }}:
+          - ${{ if and(parameters.vsc_requires, gt(length(parameters.vsc_requires), 0)) }}:
               - script: |
                   python_toxenv="$(TOXDIR)/.tox/${{ job.key }}/bin/python"
                   $python_toxenv -m pip install wheel vsc-install
