@@ -139,6 +139,7 @@ jobs:
                   VIRTUAL_ENV: ${{ job.key }}
               - ${{ each vscpkg in parameters.vsc_requires }}:
                   - checkout: ${{ vscpkg }}
+                    persistCredentials: true
                     displayName: "${{ format('vsc: clone {0}', vscpkg) }}"
                   - script: |
                       python_toxenv="$(TOXDIR)/.tox/${{ job.key }}/bin/python"
