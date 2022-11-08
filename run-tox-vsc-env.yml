@@ -27,10 +27,10 @@ jobs:
 
           # having extra VSC packages moves the source directory into its own sub-folder
           # if length 'vsc_requires' > 0, overwrite global TOXDIR variable
-          ${{ if gt(length(parameters.vsc_requires), 0) }}:
-            TOXDIR: $(Build.SourcesDirectory)
-          ${{ if eq(length(parameters.vsc_requires), 0) }}:
-            TOXDIR: $(Build.SourcesDirectory)
+          #          ${{ if gt(length(parameters.vsc_requires), 0) }}:
+            #            TOXDIR: $(Build.SourcesDirectory)
+              #          ${{ if eq(length(parameters.vsc_requires), 0) }}:
+            #            TOXDIR: $(Build.SourcesDirectory)
 
         steps:
           # checkout with submodules please
@@ -119,6 +119,7 @@ jobs:
             displayName: show python information
           - script: $(toxPython.pythonLocation)/python -m tox -av
             displayName: "tox: provision and show envs"
+            workingDirectory: $(TOXDIR)
 
           # run tests
           - script: $(toxPython.pythonLocation)/python -m tox --notest -vv --skip-missing-interpreters false
