@@ -24,6 +24,7 @@ jobs:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           TOXENV: ${{ coalesce(job.value.toxenv, job.key) }}
           PYTHONWARNINGS: "ignore:::pip._internal.cli.base_command"
+          TOXDIR: $(Build.SourcesDirectory)
 
           # having extra VSC packages moves the source directory into its own sub-folder
           # if length 'vsc_requires' > 0, overwrite global TOXDIR variable
