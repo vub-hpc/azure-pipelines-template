@@ -157,7 +157,7 @@ jobs:
               no) && echo ""'
             condition: always()
             displayName: check if junit file present
-            workingDirectory: "$(System.DefaultWorkingDirectory)/.tox"
+            workingDirectory: $(TOXDIR)/.tox
           - task: PublishTestResults@2
             displayName: publish test results via junit
             condition: eq(variables.junit, 'yes')
@@ -175,7 +175,7 @@ jobs:
               - task: CopyFiles@2
                 displayName: move coverage files into staging area
                 inputs:
-                  sourceFolder: $(System.DefaultWorkingDirectory)/.tox
+                  sourceFolder: $(TOXDIR)/.tox
                   contents: |
                     .coverage
                     coverage.xml
