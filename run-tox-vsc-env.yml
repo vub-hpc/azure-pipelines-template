@@ -22,8 +22,8 @@ jobs:
           TMPDIR: $(Agent.TempDirectory)
           PIP_NO_WARN_SCRIPT_LOCATION: "0"
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
-          PYTHONWARNINGS: "ignore:::pip._internal.cli.base_command"
           TOXENV: ${{ coalesce(job.value.toxenv, job.key) }}
+          PYTHONWARNINGS: "ignore:::pip._internal.cli.base_command"
 
           # having extra VSC packages moves the source directory into its own sub-folder
           # if length 'vsc_requires' > 0, overwrite global TOXDIR variable
@@ -37,6 +37,8 @@ jobs:
           - checkout: self
             displayName: checkout source code (with submodules)
             submodules: true
+            # azure stuff uses the repo name itself but github has org/repo structure...
+            path: s/$(Build.Repository.Name)
 
           # load tox
           - task: UsePythonVersion@0
@@ -51,35 +53,32 @@ jobs:
 
           - ${{ if parameters.tox_version }}:
               - script:
-                  ${{ format(
-                    '$(toxPython.pythonLocation)/python -m pip install -U --user --force-reinstall {0}',
-                    parameters.tox_version
-                  ) }}
-                displayName: "${{ format('tox: install {0} from PyPI', parameters.tox_version) }}"
+                  ${{ format('$(toxPython.pythonLocation)/python -m pip install -U --user --force-reinstall {0}',
+                  parameters.tox_version) }}
+                displayName: "${{ format('tox: install {0} from PyPi', parameters.tox_version) }}"
           - ${{ if not(parameters.tox_version) }}:
               - script: $(toxPython.pythonLocation)/python -m pip install -U --user --force-reinstall . -v
                 displayName: "tox: install inline"
 
           # acquire target test Python
-          - ? ${{ if or(eq(job.key, 'py39'), startsWith(job.key, 'py39-'), eq(job.key, 'py38'), startsWith(job.key,
-              'py38-'), eq(job.key, 'py37'), startsWith(job.key, 'py37-'), eq(job.key, 'py36'), startsWith(job.key,
-              'py36-'), eq(job.key, 'py35'), startsWith(job.key, 'py35-'), eq(job.key, 'py34'), startsWith(job.key,
-              'py34-'), eq(job.key, 'py27'), startsWith(job.key, 'py27-'), eq(job.key, 'pypy'), startsWith(job.key,
-              'pypy-'), eq(job.key, 'pypy3'), startsWith(job.key, 'pypy3-'), eq(job.value.py, '2.7'), eq(job.value.py,
-              '3.4'), eq(job.value.py, '3.5'), eq(job.value.py, '3.6'), eq(job.value.py, '3.7'), eq(job.value.py,
-              'pypy2'), eq(job.value.py, 'pypy3')) }}
+          - ? ${{ if or(eq(job.key, 'py310'), startsWith(job.key, 'py310-'),
+              eq(job.key, 'py39'), startsWith(job.key, 'py39-'),
+              eq(job.key, 'py38'), startsWith(job.key, 'py38-'),
+              eq(job.key, 'py37'), startsWith(job.key, 'py37-'),
+              eq(job.key, 'py36'), startsWith(job.key, 'py36-'),
+              eq(job.key, 'py27'), startsWith(job.key, 'py27-'),
+              eq(job.key, 'pypy'), startsWith(job.key, 'pypy-'),
+              eq(job.key, 'pypy3'), startsWith(job.key, 'pypy3-'),
+              eq(job.value.py, '2.7'), eq(job.value.py, '3.6'), eq(job.value.py, '3.7'),
+              eq(job.value.py, 'pypy2'), eq(job.value.py, 'pypy3')) }}
             : - task: UsePythonVersion@0
-                displayName: "${{ format('provision target test python {0}', job.key) }}"
+                displayName: ${{ format('provision target test python {0}', job.key) }}
                 inputs:
                   ${{ if job.value.py }}:
                     versionSpec: ${{ job.value.py }}
                   ${{ if not(job.value.py) }}:
                     ${{ if or(eq(job.key, 'py27'), startsWith(job.key, 'py27-')) }}:
                       versionSpec: "2.7"
-                    ${{ if or(eq(job.key, 'py34'), startsWith(job.key, 'py34-')) }}:
-                      versionSpec: "3.4"
-                    ${{ if or(eq(job.key, 'py35'), startsWith(job.key, 'py35-')) }}:
-                      versionSpec: "3.5"
                     ${{ if or(eq(job.key, 'py36'), startsWith(job.key, 'py36-')) }}:
                       versionSpec: "3.6"
                     ${{ if or(eq(job.key, 'py37'), startsWith(job.key, 'py37-')) }}:
@@ -88,31 +87,25 @@ jobs:
                       versionSpec: "3.8"
                     ${{ if or(eq(job.key, 'py39'), startsWith(job.key, 'py39-')) }}:
                       versionSpec: "3.9"
+                    ${{ if or(eq(job.key, 'py310'), startsWith(job.key, 'py310-')) }}:
+                      versionSpec: "3.10"
                     ${{ if or(eq(job.key, 'pypy'), startsWith(job.key, 'pypy-')) }}:
                       versionSpec: "pypy2"
                     ${{ if or(eq(job.key, 'pypy3'), startsWith(job.key, 'pypy3-')) }}:
                       versionSpec: "pypy3"
                   architecture: ${{ coalesce(job.value.architecture, 'x64') }}
-
-          - ${{ if or(eq(job.key, 'py310'), startsWith(job.key, 'py310-')) }}:
-              - script: |
-                  sudo add-apt-repository ppa:deadsnakes
-                  sudo apt-get update
-                  sudo apt-get install -y --no-install-recommends python3.10-dev python3.10-venv python3.10-distutils
-                displayName: "provision python 3.10"
-
           - ${{ if or(eq(job.key, 'jython'), startsWith(job.key, 'jython-')) }}:
               - script:
                   wget
                   http://search.maven.org/remotecontent?filepath=org/python/jython-installer/2.7.2/jython-installer-2.7.2.jar
                   -O $(Agent.ToolsDirectory)/jython.jar
-                displayName: "download jython"
+                displayName: download jython
               - script: java -jar $(Agent.ToolsDirectory)/jython.jar -sd $(Agent.ToolsDirectory)/jython -e demo src doc
-                displayName: "install jython"
+                displayName: install jython
               - script: echo "##vso[task.setvariable variable=PATH]$(Agent.ToolsDirectory)/jython/bin:$(PATH)"
-                displayName: "add to PATH jython"
-              - script: jython -c "import sys; print(sys.version_info); print(sys.platform)"
-                displayName: "show jython information"
+                displayName: add to PATH jython
+              - script: 'jython -c "import sys; print(sys.version_info); print(sys.platform)'
+                displayName: show jython information
 
           # allow user to run global before
           - ${{ if parameters.before }}:
@@ -122,11 +115,10 @@ jobs:
           - ${{ if job.value.before }}:
               - ${{ job.value.before }}
 
-          - script: >
-              python -c "import sys; import os; print('\n'.join(os.environ['PATH'].split(os.pathsep)));
-              print(sys.version); print(sys.executable);"
-            displayName: "show python information"
-
+          - script:
+              'python -c "import sys; import os; print(\"\n\".join(os.environ[\"PATH\"].split(os.pathsep)));
+              print(sys.version); print(sys.executable);"'
+            displayName: show python information
           - script: $(toxPython.pythonLocation)/python -m tox -av
             displayName: "tox: provision and show envs"
             workingDirectory: $(TOXDIR)
@@ -164,12 +156,11 @@ jobs:
           - bash:
               'printf "##vso[task.setVariable variable=junit]" && ([ -f junit.$(TOXENV).xml ] && printf yes || printf
               no) && echo ""'
-            displayName: "check if junit file present"
             condition: always()
+            displayName: check if junit file present
             workingDirectory: $(TOXDIR)/.tox
-
           - task: PublishTestResults@2
-            displayName: "publish test results via junit"
+            displayName: publish test results via junit
             condition: eq(variables.junit, 'yes')
             inputs:
               testResultsFormat: "JUnit"
@@ -179,14 +170,11 @@ jobs:
           # upload coverage artifacts if present
           - ${{ if and(parameters.coverage.with_toxenv, containsValue(parameters.coverage.for_envs, job.key)) }}:
               - script:
-                  ${{ format(
-                    '$(toxPython.pythonLocation)/python -m tox -e {0} --skip-missing-interpreters false',
-                    parameters.coverage.with_toxenv
-                  ) }}
-                displayName: "create coverage report"
-                workingDirectory: $(TOXDIR)
+                  ${{ format('$(toxPython.pythonLocation)/python -m tox -e {0} --skip-missing-interpreters false',
+                  parameters.coverage.with_toxenv) }}
+                displayName: create coverage report
               - task: CopyFiles@2
-                displayName: "move coverage files into staging area"
+                displayName: move coverage files into staging area
                 inputs:
                   sourceFolder: $(TOXDIR)/.tox
                   contents: |
@@ -194,7 +182,7 @@ jobs:
                     coverage.xml
                   targetFolder: $(Build.StagingDirectory)
               - task: PublishBuildArtifacts@1
-                displayName: "publish coverage file"
+                displayName: publish coverage file
                 inputs:
                   pathtoPublish: $(Build.ArtifactStagingDirectory)
                   ArtifactName: "coverage-$(Agent.OS)-$(Agent.OSArchitecture)-$(TOXENV)"
