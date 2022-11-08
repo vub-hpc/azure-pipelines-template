@@ -37,6 +37,7 @@ jobs:
           - checkout: self
             displayName: checkout source code (with submodules)
             submodules: true
+            # azure stuff uses the repo name itself but github has org/repo structure...
             path: s/$(Build.Repository.Name)
 
           # load tox
