@@ -37,7 +37,7 @@ jobs:
           - checkout: self
             displayName: checkout source code (with submodules)
             submodules: true
-            path: $(Build.Repository.Name)
+            path: s/$(Build.Repository.Name)
 
           # load tox
           - task: UsePythonVersion@0
