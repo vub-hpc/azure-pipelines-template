@@ -9,6 +9,7 @@ parameters:
     for_envs: []
   dependsOn: []
   vsc_requires: []
+  system_requires: []
 
 jobs:
   - ${{ each job in parameters.jobs }}:
@@ -33,6 +34,13 @@ jobs:
             TOXDIR: $(Build.SourcesDirectory)
 
         steps:
+          # install any extra system packages if requested
+          - ${{ if and(parameters.system_requires, gt(length(parameters.system_requires), 0)) }}:
+              - script: |
+                  sudo apt-get -qq -y update
+                  sudo apt-get install -qq -y ${{ each pkg in parameters.system_requires }}
+                displayName: "Install requested system packages"
+
           # checkout with submodules please
           - checkout: self
             displayName: checkout source code (with submodules)
