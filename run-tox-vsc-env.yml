@@ -38,8 +38,10 @@ jobs:
           - ${{ if and(parameters.system_requires, gt(length(parameters.system_requires), 0)) }}:
               - script: |
                   sudo apt-get -qq -y update
-                  sudo apt-get install -qq -y ${{ each pkg in parameters.system_requires }}
+                  sudo apt-get install -qq -y ${{variables.packages}}
                 displayName: "Install requested system packages"
+                variables:
+                  packages: ${{  join(' ', parameters.system_requires)  }}
 
           # checkout with submodules please
           - checkout: self
