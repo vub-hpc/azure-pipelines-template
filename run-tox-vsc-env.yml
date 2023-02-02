@@ -9,6 +9,7 @@ parameters:
     for_envs: []
   dependsOn: []
   vsc_requires: []
+  system_requires: []
 
 jobs:
   - ${{ each job in parameters.jobs }}:
@@ -24,6 +25,9 @@ jobs:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           TOXENV: ${{ coalesce(job.value.toxenv, job.key) }}
           PYTHONWARNINGS: "ignore:::pip._internal.cli.base_command"
+          # make a string with all request system packages if any
+          ${{ if and(parameters.system_requires, gt(length(parameters.system_requires), 0)) }}:
+            system_packages: ${{  join(' ', parameters.system_requires)  }}
 
           # having extra VSC packages moves the source directory into its own sub-folder
           # if length 'vsc_requires' > 0, overwrite global TOXDIR variable
@@ -33,6 +37,13 @@ jobs:
             TOXDIR: $(Build.SourcesDirectory)
 
         steps:
+          # install any extra system packages if requested
+          - ${{ if variables.system_packages }}:
+              - script: |
+                  sudo apt-get -qq -y update
+                  sudo apt-get install -qq -y ${{variables.system_packages}}
+                displayName: "Install requested system packages"
+
           # checkout with submodules please
           - checkout: self
             displayName: checkout source code (with submodules)
