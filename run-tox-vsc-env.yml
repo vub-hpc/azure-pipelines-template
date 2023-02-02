@@ -25,7 +25,9 @@ jobs:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           TOXENV: ${{ coalesce(job.value.toxenv, job.key) }}
           PYTHONWARNINGS: "ignore:::pip._internal.cli.base_command"
-          system_packages: ${{  join(' ', parameters.system_requires)  }}
+          # make a string with all request system packages if any
+          ${{ if and(parameters.system_requires, gt(length(parameters.system_requires), 0)) }}:
+            system_packages: ${{  join(' ', parameters.system_requires)  }}
 
           # having extra VSC packages moves the source directory into its own sub-folder
           # if length 'vsc_requires' > 0, overwrite global TOXDIR variable
@@ -36,7 +38,7 @@ jobs:
 
         steps:
           # install any extra system packages if requested
-          - ${{ if and(parameters.system_requires, gt(length(parameters.system_requires), 0)) }}:
+          - ${{ if variables.system_packages }}:
               - script: |
                   sudo apt-get -qq -y update
                   sudo apt-get install -qq -y ${{variables.system_packages}}
