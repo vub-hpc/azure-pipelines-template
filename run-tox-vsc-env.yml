@@ -3,7 +3,8 @@ parameters:
     py39:
     py36:
     py27:
-  tox_version: "tox"
+  # cap versions still compatible with Python 3.6
+  tox_version: "'virtualenv<20.22.0' 'tox<4.5.0'"
   coverage:
     with_toxenv: ""
     for_envs: []
