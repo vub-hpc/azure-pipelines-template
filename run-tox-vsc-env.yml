@@ -1,10 +1,8 @@
 parameters:
   jobs:
     py39:
-    py36:
-    py27:
   # cap versions still compatible with Python 3.6
-  tox_version: "'virtualenv<20.22.0' 'tox<4.5.0'"
+  #tox_version: "'virtualenv<20.22.0' 'tox<4.5.0'"
   coverage:
     with_toxenv: ""
     for_envs: []
@@ -18,7 +16,7 @@ jobs:
         dependsOn: ${{ coalesce(job.value.dependsOn, parameters.dependsOn) }}
 
         pool:
-          vmImage: "ubuntu-20.04"
+          vmImage: "ubuntu-24.04"
 
         variables:
           TMPDIR: $(Agent.TempDirectory)
@@ -56,7 +54,7 @@ jobs:
           - task: UsePythonVersion@0
             displayName: "tox: get python"
             inputs:
-              versionSpec: "3.8"
+              versionSpec: "3.9"
               addToPath: false
             name: toxPython
 
