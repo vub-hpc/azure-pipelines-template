@@ -1,8 +1,8 @@
 parameters:
   jobs:
     py39:
-  # cap versions still compatible with Python 3.6
-  #tox_version: "'virtualenv<20.22.0' 'tox<4.5.0'"
+  # cap versions still compatible with Python 3.9
+  tox_version: "'virtualenv<20.22.0' 'tox'"
   coverage:
     with_toxenv: ""
     for_envs: []
