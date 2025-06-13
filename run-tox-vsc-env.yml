@@ -66,9 +66,6 @@ jobs:
                   ${{ format('$(toxPython.pythonLocation)/python -m pip install -U --user --force-reinstall {0}',
                   parameters.tox_version) }}
                 displayName: "${{ format('tox: install {0} from PyPi', parameters.tox_version) }}"
-          - ${{ if not(parameters.tox_version) }}:
-              - script: $(toxPython.pythonLocation)/python -m pip install -U --user --force-reinstall . -v
-                displayName: "tox: install inline"
 
           # acquire target test Python
           - ? ${{ if or(eq(job.key, 'py310'), startsWith(job.key, 'py310-'),
